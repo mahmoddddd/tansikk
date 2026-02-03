@@ -1,0 +1,31 @@
+# Use the official .NET SDK image to build the app
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /app
+
+# Copy the solution file and project files first for better caching
+COPY *.sln ./
+COPY TansiqyV1.API/*.csproj ./TansiqyV1.API/
+COPY TansiqyV1.PL/*.csproj ./TansiqyV1.PL/
+COPY TansiqyV1.BLL/*.csproj ./TansiqyV1.BLL/
+COPY TansiqyV1.DAL/*.csproj ./TansiqyV1.DAL/
+
+# Restore dependencies
+RUN dotnet restore TansiqyV1.API/TansiqyV1.API.csproj
+
+# Copy the rest of the source code
+COPY . .
+
+# Build and publish the API project
+WORKDIR /app/TansiqyV1.API
+RUN dotnet publish -c Release -o /app/out
+
+# Use the lighter ASP.NET Core runtime image for the final container
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+WORKDIR /app
+COPY --from=build /app/out .
+
+# Expose the port Render expects (usually 80, Render sets PORT env var)
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
+
+ENTRYPOINT ["dotnet", "TansiqyV1.API.dll"]

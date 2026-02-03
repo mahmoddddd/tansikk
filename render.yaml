@@ -1,0 +1,28 @@
+services:
+  # The API Service
+  - type: web
+    name: tansiqy-api
+    env: docker
+    dockerfilePath: ./Dockerfile.API
+    plan: free # or starter
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+    healthCheckPath: /health # If you have one, or remove this line
+    numInstances: 1
+
+  # The MVC Web App
+  - type: web
+    name: tansiqy-mvc
+    env: docker
+    dockerfilePath: ./Dockerfile.MVC
+    plan: free
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ApiBaseUrl
+        fromService:
+          type: web
+          name: tansiqy-api
+          property: url
+    numInstances: 1
